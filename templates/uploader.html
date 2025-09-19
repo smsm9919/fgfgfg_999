@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Flow Market — رفع الصور</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+<header class="header">
+  <div class="container">
+    <h1>Flow Market</h1>
+    <nav>
+      <a href="/">الرئيسية</a>
+      <a href="/uploader" class="active">رفع الصور</a>
+      <a href="/healthz">/healthz</a>
+      <a href="/db-ping">/db-ping</a>
+      <a href="/auth/health">/auth/health</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="card">
+    <h2>رفع الصور إلى ImgBB</h2>
+    <form id="uploadForm">
+      <div class="field">
+        <label>اختر صورة</label>
+        <input type="file" id="file" accept="image/*" required/>
+      </div>
+      <div class="actions">
+        <button type="submit">رفع الآن</button>
+      </div>
+    </form>
+
+    <div id="result" class="result" hidden>
+      <h3>النتيجة</h3>
+      <p id="status"></p>
+      <div id="preview"></div>
+      <p><a id="link" href="#" target="_blank"></a></p>
+      <pre id="json"></pre>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">© Flow Market</div>
+</footer>
+
+<script>
+const form = document.getElementById('uploadForm');
+const statusEl = document.getElementById('status');
+const jsonEl = document.getElementById('json');
+const linkEl = document.getElementById('link');
+const previewEl = document.getElementById('preview');
+const resultBox = document.getElementById('result');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const file = document.getElementById('file').files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  statusEl.textContent = 'جارِ الرفع...';
+  resultBox.hidden = false;
+  previewEl.innerHTML = '';
+  linkEl.textContent = '';
+  linkEl.removeAttribute('href');
+  jsonEl.textContent = '';
+
+  try {
+    const res = await fetch('/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+    jsonEl.textContent = JSON.stringify(data, null, 2);
+    if (data.ok && data.url) {
+      statusEl.textContent = 'تم الرفع بنجاح';
+      const img = document.createElement('img');
+      img.src = data.url;
+      img.alt = 'preview';
+      img.className = 'thumb';
+      previewEl.appendChild(img);
+      linkEl.textContent = data.url;
+      linkEl.href = data.url;
+    } else {
+      statusEl.textContent = data.error || 'فشل في الرفع';
+    }
+  } catch (err) {
+    statusEl.textContent = 'خطأ في الاتصال بالسيرفر';
+  }
+});
+</script>
+</body>
+</html>
